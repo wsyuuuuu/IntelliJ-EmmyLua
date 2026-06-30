@@ -20,9 +20,11 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.util.messages.Topic
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.tang.intellij.lua.Constants
 import com.tang.intellij.lua.lang.LuaLanguageLevel
+import com.tang.intellij.lua.localization.LocalizationSettingsListener
 import java.nio.charset.Charset
 
 /**
@@ -77,6 +79,12 @@ class LuaSettings : PersistentStateComponent<LuaSettings> {
      */
     var languageLevel = LuaLanguageLevel.LUA53
 
+    var localizationHintsEnabled: Boolean = false
+
+    var dictionaryFilePath: String = ""
+
+    var localizationKeyPrefix: String = "S_"
+
     override fun getState(): LuaSettings {
         return this
     }
@@ -104,6 +112,9 @@ class LuaSettings : PersistentStateComponent<LuaSettings> {
             requireLikeFunctionNames = value.split(";").map { it.trim() }.toTypedArray()
         }
     companion object {
+
+        val LOCALIZATION_SETTINGS_TOPIC: Topic<LocalizationSettingsListener> =
+            Topic.create("Lua application localization settings changed", LocalizationSettingsListener::class.java)
 
         val instance: LuaSettings
             get() = ApplicationManager.getApplication().getService(LuaSettings::class.java)

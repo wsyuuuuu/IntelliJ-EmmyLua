@@ -151,6 +151,8 @@
 
         <!--lua settings-->
         <applicationService serviceImplementation="com.tang.intellij.lua.project.LuaSettings"/>
+        <projectService serviceImplementation="com.tang.intellij.lua.project.LuaProjectLocalizationSettings"/>
+        <projectService serviceImplementation="com.tang.intellij.lua.localization.LocalizationDictionaryService"/>
         <applicationConfigurable groupId="language"
                                  displayName="EmmyLua"
                                  id="preferences.Lua"
@@ -159,6 +161,10 @@
                           displayName="Emmy Completion"
                           id="preferences.Lua.Completion"/>-->
         </applicationConfigurable>
+        <projectConfigurable groupId="language"
+                             displayName="EmmyLua Localization"
+                             id="preferences.Lua.Localization"
+                             instance="com.tang.intellij.lua.project.LuaProjectLocalizationConfigurable"/>
 
         <!--intentions-->
         <intentionAction>

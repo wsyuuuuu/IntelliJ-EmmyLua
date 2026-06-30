@@ -22,6 +22,8 @@ import com.intellij.codeInsight.hints.InlayParameterHintsProvider
 import com.intellij.codeInsight.hints.Option
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
+import com.tang.intellij.lua.localization.*
+import com.tang.intellij.lua.project.LuaSettings
 import com.tang.intellij.lua.psi.*
 import com.tang.intellij.lua.search.SearchContext
 import com.tang.intellij.lua.ty.*
@@ -46,7 +48,11 @@ class LuaParameterHintsProvider : InlayParameterHintsProvider {
         private val FUNCTION_HINT = Option("lua.hints.show_function_type",
             { "Show function return type hints" },
             false)
+        private val LOCALIZATION_HINT = Option("lua.hints.show_localization",
+            { "Show localization hints" },
+            LuaSettings.instance.localizationHintsEnabled)
         private const val TYPE_INFO_PREFIX = "@TYPE@"
+        private const val LOCALIZATION_HINT_PREFIX = LocalizationHintUtil.INLAY_PREFIX
         private var EXPR_HINT = arrayOf(LuaLiteralExpr::class.java,
                 LuaBinaryExpr::class.java,
                 LuaUnaryExpr::class.java,
@@ -82,6 +88,9 @@ class LuaParameterHintsProvider : InlayParameterHintsProvider {
                 true
             }
         }
+        else if (psi is LuaLiteralExpr) {
+            collectLocalizationHintsForLiteral(psi, list)
+        }
         else if (psi is LuaParamNameDef) {
             if (PARAMETER_TYPE_HINT.get()) {
                 val type = psi.guessType(SearchContext.get(psi.project))
@@ -111,6 +120,21 @@ class LuaParameterHintsProvider : InlayParameterHintsProvider {
         return list
     }
 
+    private fun collectLocalizationHintsForLiteral(literal: LuaLiteralExpr, list: ArrayList<InlayInfo>) {
+        if (!LOCALIZATION_HINT.get()) return
+        val project = literal.project ?: return
+        if (project.isDefault) return
+        val dictionaryService = LocalizationDictionaryService.getInstance(project)
+        if (!dictionaryService.isEnabled()) return
+
+        val settings = EffectiveLocalizationSettings.forProject(project)
+        val key = LocalizationLiteralMatcher.match(literal, settings.keyPrefix) ?: return
+        val translation = dictionaryService.getTranslation(key)
+        val displayText = LocalizationHintUtil.formatHintText(translation)
+        val offset = literal.textOffset + literal.textLength
+        list.add(InlayInfo(LocalizationHintUtil.wrapInlayPayload(displayText), offset))
+    }
+
     override fun getHintInfo(psiElement: PsiElement): HintInfo? = null
 
     override fun getDefaultBlackList(): Set<String> {
@@ -120,10 +144,13 @@ class LuaParameterHintsProvider : InlayParameterHintsProvider {
     override fun isBlackListSupported() = false
 
     override fun getSupportedOptions(): List<Option> {
-        return listOf(ARGS_HINT, LOCAL_VARIABLE_HINT, PARAMETER_TYPE_HINT, FUNCTION_HINT)
+        return listOf(ARGS_HINT, LOCAL_VARIABLE_HINT, PARAMETER_TYPE_HINT, FUNCTION_HINT, LOCALIZATION_HINT)
     }
 
     override fun getInlayPresentation(inlayText: String): String {
+        if (inlayText.startsWith(LOCALIZATION_HINT_PREFIX)) {
+            return " : ${inlayText.substring(LOCALIZATION_HINT_PREFIX.length)}"
+        }
         if (inlayText.startsWith(TYPE_INFO_PREFIX)) {
             return " : ${inlayText.substring(TYPE_INFO_PREFIX.length)}"
         }

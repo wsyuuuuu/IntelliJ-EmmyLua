@@ -33,6 +33,7 @@ import javax.swing.*;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
+import java.awt.*;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
@@ -44,6 +45,8 @@ import java.util.SortedMap;
 public class LuaSettingsPanel implements SearchableConfigurable, Configurable.NoScroll {
     private final LuaSettings settings;
     private JPanel myPanel;
+    private JPanel wrapperPanel;
+    private LocalizationSettingsEditor localizationEditor;
     private JTextField constructorNames;
     private JCheckBox strictDoc;
     private JCheckBox smartCloseEnd;
@@ -87,6 +90,8 @@ public class LuaSettingsPanel implements SearchableConfigurable, Configurable.No
         ComboBoxModel<LuaLanguageLevel> lanLevelModel = new DefaultComboBoxModel<>(LuaLanguageLevel.values());
         languageLevel.setModel(lanLevelModel);
         lanLevelModel.setSelectedItem(settings.getLanguageLevel());
+
+        localizationEditor = LocalizationSettingsEditor.Companion.createApplicationEditor();
     }
 
     @NotNull
@@ -104,7 +109,12 @@ public class LuaSettingsPanel implements SearchableConfigurable, Configurable.No
     @Nullable
     @Override
     public JComponent createComponent() {
-        return myPanel;
+        if (wrapperPanel == null) {
+            wrapperPanel = new JPanel(new BorderLayout());
+            wrapperPanel.add(myPanel, BorderLayout.NORTH);
+            wrapperPanel.add(localizationEditor.getPanel(), BorderLayout.CENTER);
+        }
+        return wrapperPanel;
     }
 
     @Override
@@ -123,7 +133,8 @@ public class LuaSettingsPanel implements SearchableConfigurable, Configurable.No
                 settings.getAttachDebugCaptureStd() != captureStd.isSelected() ||
                 settings.getAttachDebugDefaultCharsetName() != defaultCharset.getSelectedItem() ||
                 settings.getLanguageLevel() != languageLevel.getSelectedItem() ||
-                !Arrays.equals(settings.getAdditionalSourcesRoot(), additionalRoots.getRoots(), String::compareTo);
+                !Arrays.equals(settings.getAdditionalSourcesRoot(), additionalRoots.getRoots(), String::compareTo) ||
+                localizationEditor.isModified();
     }
 
     @Override
@@ -155,6 +166,7 @@ public class LuaSettingsPanel implements SearchableConfigurable, Configurable.No
                 DaemonCodeAnalyzer.getInstance(project).restart();
             }
         }
+        localizationEditor.applyApplicationSettings(settings);
     }
 
     private int getTooLargerFileThreshold() {
