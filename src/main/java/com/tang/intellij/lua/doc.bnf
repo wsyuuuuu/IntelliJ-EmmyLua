@@ -200,10 +200,10 @@ tag_field ::= TAG_NAME_FIELD access_modifier? ('<' class_name_ref '>')? ID ty co
 }
 
 //--- tag
-tag_def ::= TAG_NAME_NAME comment_string? {
+tag_def ::= TAG_NAME comment_string? {
     pin = 1
     methods = [
-        tagName = 'TAG_NAME_NAME'
+        tagName = 'TAG_NAME'
     ]
 }
 

@@ -588,13 +588,13 @@ public class LuaDocParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // TAG_NAME_NAME comment_string?
+  // TAG_NAME comment_string?
   public static boolean tag_def(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "tag_def")) return false;
-    if (!nextTokenIs(b, TAG_NAME_NAME)) return false;
+    if (!nextTokenIs(b, TAG_NAME)) return false;
     boolean r, p;
     Marker m = enter_section_(b, l, _NONE_, TAG_DEF, null);
-    r = consumeToken(b, TAG_NAME_NAME);
+    r = consumeToken(b, TAG_NAME);
     p = r; // pin = 1
     r = r && tag_def_1(b, l + 1);
     exit_section_(b, l, m, r, p, null);

@@ -31,9 +31,11 @@ import com.tang.intellij.lua.comment.reference.LuaClassNameReference
 import com.tang.intellij.lua.comment.reference.LuaDocParamNameReference
 import com.tang.intellij.lua.comment.reference.LuaDocSeeReference
 import com.tang.intellij.lua.psi.LuaClassMember
+import com.tang.intellij.lua.psi.LuaCommentOwner
 import com.tang.intellij.lua.psi.LuaElementFactory
 import com.tang.intellij.lua.psi.Visibility
 import com.tang.intellij.lua.search.SearchContext
+import com.tang.intellij.lua.stubs.LuaClassMemberStub
 import com.tang.intellij.lua.ty.*
 import javax.swing.Icon
 
@@ -329,7 +331,31 @@ fun getNameIdentifier(g: LuaDocGenericDef): PsiElement? {
 }
 
 fun isDeprecated(member: LuaClassMember): Boolean {
+    if (member is LuaDocTagField || member is LuaDocTableField) {
+        return isDocMemberDeprecated(member as LuaDocPsiElement)
+    }
+    if (member is StubBasedPsiElement<*>) {
+        val stub = member.stub
+        if (stub is LuaClassMemberStub) {
+            return stub.isDeprecated
+        }
+    }
+    if (member is LuaCommentOwner) {
+        return member.comment?.isDeprecated == true
+    }
     return false
+}
+
+private fun isDocMemberDeprecated(element: LuaDocPsiElement): Boolean {
+    var prev = element.prevSibling
+    while (prev != null) {
+        when (prev) {
+            is LuaDocTagField, is LuaDocTableField -> return false
+            is LuaDocTagDef -> if (prev.tagName.text == "deprecated") return true
+        }
+        prev = prev.prevSibling
+    }
+    return LuaCommentUtil.findContainer(element).isDeprecated
 }
 
 fun getNameIdentifier(g: LuaDocTagAlias): PsiElement? {
